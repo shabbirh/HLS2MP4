@@ -37,6 +37,8 @@ public class PlaylistDownloader {
     private static String EXT_X_KEY = "#EXT-X-KEY";
     private static final String BANDWIDTH = "BANDWIDTH";
 
+    private static int lastLine;
+
     public PlaylistDownloader(String playlistUrl,DownloadListener downloadListener) throws MalformedURLException {
         this.url = new URL(playlistUrl);
         this.playlist = new ArrayList<String>();
@@ -57,10 +59,20 @@ public class PlaylistDownloader {
         downloadListener.onStartDownload(url.toString());
         this.crypto = new Crypto(getBaseUrl(this.url), key);
 
+        for(int z = 0; z < playlist.size(); z++) {
+            String line = playlist.get(z);
+            if (line.endsWith(".ts")) {
+                lastLine = z;
+            }
+        }
+
+        Log.log("The last useful line is line " + lastLine + " containing " + playlist.get(lastLine));
+
         for (int i = 0; i< playlist.size(); i++) {
 
             String line = playlist.get(i);
             line = line.trim();
+
 
             if (line.startsWith(EXT_X_KEY)) {
                 crypto.updateKeyString(line);
@@ -86,6 +98,7 @@ public class PlaylistDownloader {
                 downloadInternal(segmentUrl, outfile, i, playlist.size());
             }
         }
+
 
     }
 
@@ -127,6 +140,18 @@ public class PlaylistDownloader {
                     e.printStackTrace();
                 }
                 return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                int prog = (currProgress * 100) / size;
+                Log.log("currProgress == " + currProgress + " and line == " + size);
+                if (currProgress == lastLine) {
+                    Log.log("it would see as if the file has now completed downloading.");
+                    Log.log("Enjoy the file located at " + outFile);
+                    downloadListener.onDownloadCompletedFully(outFile);
+                }
             }
 
             @Override
@@ -179,7 +204,7 @@ public class PlaylistDownloader {
                             maxRate = Math.max(bandwidth, maxRate);
 
                             if (bandwidth == maxRate)
-                                maxRateIndex = index + 1;
+                                maxRateIndex = index - 1;
                         } catch (NumberFormatException ignore) {
                             Log.log("NumberFormatException"+ignore.getMessage());
                         }
@@ -247,5 +272,6 @@ public class PlaylistDownloader {
     public interface DownloadListener{
         void onProgressUpdate(int progress);
         void onStartDownload(String url);
+        void onDownloadCompletedFully(String outfile);
     }
 }

@@ -1,5 +1,6 @@
 package android.example.hlsmerge;
 
+import android.example.hlsmerge.Utils.Log;
 import android.example.hlsmerge.crypto.PlaylistDownloader;
 import android.os.Bundle;
 import android.os.Environment;
@@ -14,6 +15,7 @@ import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.io.File;
 import java.net.MalformedURLException;
 import java.util.Random;
 
@@ -44,7 +46,8 @@ public class MainActivity extends AppCompatActivity implements PlaylistDownloade
                                     if (!TextUtils.isEmpty(textBox.getText().toString())) playlistUrl = textBox.getText().toString();
                                     PlaylistDownloader downloader =
                                             new PlaylistDownloader(playlistUrl, MainActivity.this);
-                                    downloader.download(Environment.getExternalStorageDirectory()+"/outputHLS"+ new Random().nextInt()+".mp4");
+                                    String filename = Environment.getExternalStorageDirectory()+"/outputHLS"+ new Random().nextInt()+".mp4";
+                                    downloader.download(filename);
                                 } catch (java.io.IOException e) {
                                     Snackbar.make(view, "Url/path not correct", Snackbar.LENGTH_SHORT).show();
                                     e.printStackTrace();
@@ -92,6 +95,12 @@ public class MainActivity extends AppCompatActivity implements PlaylistDownloade
     @Override
     public void onStartDownload(String url) {
         progressMsg = "\nDownloading from "+url;
+        progressText.setText(progressMsg);
+    }
+
+    @Override
+    public void onDownloadCompletedFully(String outfile) {
+        progressMsg = "Download has completed\nYour file is at:\n"+outfile+"\n\nEnjoy :)";
         progressText.setText(progressMsg);
     }
 }
